@@ -1,0 +1,6 @@
+@SharingPlatform.WebApi_HostAddress = http://localhost:5190
+
+GET {{SharingPlatform.WebApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
