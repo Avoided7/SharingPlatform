@@ -1,51 +1,67 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SharingPlatform.Application.Abstractions;
-using SharingPlatform.WebApi.Core.Requests;
-using SharingPlatform.WebApi.Core.Responses;
 using SharingPlatform.WebApi.Core.Servers.Requests;
 using SharingPlatform.WebApi.Core.Servers.Responses;
 using SharingPlatform.WebApi.Extensions;
+using SharingPlatform.WebApi.Models.Requests;
 
 namespace SharingPlatform.WebApi.Core.Servers;
 
 [ApiController]
 [Route("api/servers")]
-public sealed class ServersController(
-    IServersService serversService) : ControllerBase
+public sealed class ServersController(IServersService serversService) : ControllerBase
 {
     [HttpGet]
     public async Task<IActionResult> Get(
         [FromQuery] PaginatedRequest request)
     {
-        var servers = serversService.GetServers();
-        var response = PaginatedResponse.From(
-            request, 
-            servers, 
-            ServerPreviewResponse.FromModel);
+        var paginatedServers = serversService.GetOnlyVisible(request.Page, request.PageSize);
+        var response = paginatedServers.ChangeType(ServerPreviewResponse.FromModel);
         
         return Ok(response);
     }
 
-    [Authorize, HttpGet("owned")]
-    public async Task<IActionResult> GetUserServers(
+    [Authorize, HttpGet("all")] // TODO: With admin rights.
+    public async Task<IActionResult> GetAll(
+		[FromQuery] PaginatedRequest request)
+	{
+		var paginatedServers = serversService.Get(request.Page, request.PageSize);
+		var response = paginatedServers.ChangeType(ServerPreviewResponse.FromModel);
+
+		return Ok(response);
+	}
+
+	[Authorize, HttpGet("owned")]
+    public async Task<IActionResult> GetUserOwned(
         [FromQuery] PaginatedRequest request)
     {
         var userId = HttpContext.GetUserId();
-        var servers = serversService.GetUserServers(userId);
-        var response = PaginatedResponse.From(request, servers, ServerPreviewResponse.FromModel);
-        
-        return Ok(response);
+        var paginatedServers = serversService.GetUserOwned(userId, request.Page, request.PageSize);
+        var response = paginatedServers.ChangeType(ServerPreviewResponse.FromModel);
+
+		return Ok(response);
     }
-    
-    [Authorize, HttpPost]
+
+    [Authorize, HttpGet("favourites")]
+    public async Task<IActionResult> GetUserFavourites(
+		[FromQuery] PaginatedRequest request)
+	{
+		var userId = HttpContext.GetUserId();
+		var paginatedServers = serversService.GetUserFavourites(userId, request.Page, request.PageSize);
+		var response = paginatedServers.ChangeType(ServerPreviewResponse.FromModel);
+
+		return Ok(response);
+	}
+
+	[Authorize, HttpPost]
     public async Task<IActionResult> Create(
         [FromBody] CreateServerRequest request)
     {
         var userId = HttpContext.GetUserId();
-        await serversService.AddServerFromInviteLinkAsync(request.InviteUri, userId);
+        var server = await serversService.AddFromInviteLinkAsync(request.InviteUri, userId);
         
-        return NoContent();
+        return Ok(server.Id);
     }
     
     [Authorize, HttpPut]
@@ -54,7 +70,8 @@ public sealed class ServersController(
     {
         var userId = HttpContext.GetUserId();
         var server = request.ToModel(userId);
-        await serversService.UpdateServerAsync(server);
+
+        await serversService.UpdateAsync(server);
         
         return NoContent();
     }
@@ -64,9 +81,9 @@ public sealed class ServersController(
         [FromBody] DeleteServerRequest request)
     {
         var userId = HttpContext.GetUserId();
-        await serversService.DeleteServerAsync(request.Id, userId);
+
+        await serversService.DeleteAsync(request.ServerId, userId);
         
         return NoContent();
     }
 }
-

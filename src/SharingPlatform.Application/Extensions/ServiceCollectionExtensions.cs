@@ -11,8 +11,9 @@ public static class ServiceCollectionExtensions
     {
         services.AddScoped<IServersService, ServersService>();
         services.AddScoped<ITagsService, TagsService>();
-        services.AddScoped<ITokenFactory, TokenFactory>();
-        
+        services.AddScoped<IFavouritesService, FavouritesService>();
+		services.AddScoped<ITokenFactory, TokenFactory>();
+
         return services;
     }
 }

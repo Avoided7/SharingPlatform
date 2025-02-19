@@ -1,12 +1,15 @@
-﻿using SharingPlatform.Domain.Models;
+﻿using SharingPlatform.Domain.Helpers;
+using SharingPlatform.Domain.Models;
 
 namespace SharingPlatform.Application.Abstractions;
 
 public interface IServersService
 {
-    IQueryable<ServerModel> GetServers();
-    IQueryable<ServerModel> GetUserServers(string userId);
-    Task AddServerFromInviteLinkAsync(string inviteLink, string userId);
-    Task UpdateServerAsync(ServerModel server);
-    Task DeleteServerAsync(string id, string userId);
+    PaginatedList<ServerModel> Get(int page, int pageSize);
+    PaginatedList<ServerModel> GetOnlyVisible(int page, int pageSize);
+    PaginatedList<ServerModel> GetUserOwned(string userId, int page, int pageSize);
+    PaginatedList<ServerModel> GetUserFavourites(string userId, int page, int pageSize);
+    Task<ServerModel> AddFromInviteLinkAsync(string inviteLink, string userId);
+    Task UpdateAsync(ServerModel server);
+    Task DeleteAsync(Guid serverId, string userId);
 }

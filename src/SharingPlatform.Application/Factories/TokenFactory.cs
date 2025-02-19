@@ -25,7 +25,7 @@ public sealed class TokenFactory(JwtSettings settings) : ITokenFactory
             issuer: settings.Issuer,
             audience: settings.Audience,
             claims: claims,
-            expires: DateTime.Now.AddMinutes(30),
+            expires: DateTime.Now.AddDays(30),
             signingCredentials: credentials);
 
         var handler = new JwtSecurityTokenHandler();

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using SharingPlatform.Application.Abstractions;
 using SharingPlatform.Application.Dtos;
 using SharingPlatform.Domain.Exceptions;
+using SharingPlatform.Domain.Helpers;
 using SharingPlatform.Domain.Models;
 using SharingPlatform.Infrastructure.Core;
 
@@ -12,35 +13,77 @@ internal sealed class ServersService(
     ApplicationDbContext dbContext,
     HttpClient client) : IServersService
 {
-    public IQueryable<ServerModel> GetServers()
+    public PaginatedList<ServerModel> Get(int page, int pageSize)
     {
-        return dbContext.Servers.Include(server => server.Tags);
+        var servers = dbContext.Servers
+	        .Include(server => server.Tags)
+	        .Include(server => server.MembersInfo);
+
+        var result = PaginatedList.From(servers, page, pageSize);
+
+		return result;
     }
 
-    public IQueryable<ServerModel> GetUserServers(string userId)
+    public PaginatedList<ServerModel> GetOnlyVisible(int page, int pageSize)
     {
-        return dbContext.Servers.Where(server => server.UserId == userId).Include(server => server.Tags);
+        var servers = dbContext.Servers
+            .Include(server => server.Tags)
+			.Include(server => server.MembersInfo)
+			.Where(server => server.Visible);
+
+        var result = PaginatedList.From(servers, page, pageSize);
+        
+        return result;
     }
 
-    public async Task AddServerFromInviteLinkAsync(string inviteLink, string userId)
+    public PaginatedList<ServerModel> GetUserOwned(string userId, int page, int pageSize)
+    {
+	    var servers = dbContext.Servers
+		    .Where(server => server.UserId == userId)
+		    .Include(server => server.Tags)
+		    .Include(server => server.MembersInfo);
+
+	    var result = PaginatedList.From(servers, page, pageSize);
+
+		return result;
+    }
+
+    public PaginatedList<ServerModel> GetUserFavourites(string userId, int page, int pageSize)
+    {
+	    var servers = dbContext.Favourites
+		    .Include(favourite => favourite.Server.Tags)
+		    .Include(favourite => favourite.Server.MembersInfo)
+		    .Select(favourite => favourite.Server);
+
+		var result = PaginatedList.From(servers, page, pageSize);
+
+		return result;
+	}
+
+	public async Task<ServerModel> AddFromInviteLinkAsync(string inviteLink, string userId)
     {
         var data = await GetServerDataAsync(inviteLink);
         var details = data.Details!;
         
-        var iconUrl = GetIconUrl(details.Id, details.IconHash);
+        var photoUri = GetPhotoUri(details.Id, details.IconHash);
+
+        var membersInfo = MembersInfoModel.Create(data.MembersOnline, data.MembersTotal);
 
         var model = ServerModel.Create(
-            details.Id, 
             details.Name, 
             details.Description, 
-            iconUrl,
-            userId);
+            photoUri,
+            userId,
+            details.Id,
+            membersInfo);
         
         await dbContext.Servers.AddAsync(model);
         await dbContext.SaveChangesAsync();
+
+        return model;
     }
     
-    public async Task UpdateServerAsync(ServerModel server)
+    public async Task UpdateAsync(ServerModel server)
     {
         var entity = await dbContext.Servers
             .Include(entity => entity.Tags)
@@ -48,7 +91,7 @@ internal sealed class ServersService(
 
         if (entity is null || entity.UserId != server.UserId)
         {
-            throw new ServerNotFoundException();
+            NotFoundException.ThrowFromModel(typeof(ServerModel));
         }
         
         var tags = new List<TagModel>();
@@ -58,7 +101,7 @@ internal sealed class ServersService(
 
             if (existedTag is null)
             {
-                throw new TagNotFoundException();
+                NotFoundException.ThrowFromModel(typeof(TagModel));
             }
             
             tags.Add(existedTag);
@@ -70,14 +113,14 @@ internal sealed class ServersService(
         await dbContext.SaveChangesAsync();
     }
 
-    public async Task DeleteServerAsync(string id, string userId)
+    public async Task DeleteAsync(Guid serverId, string userId)
     {
-        var entity = await dbContext.Servers.FindAsync(id);
+        var entity = await dbContext.Servers.FindAsync(serverId);
 
         if (entity is null || entity.UserId != userId)
         {
-            throw new ServerNotFoundException();
-        }
+			NotFoundException.ThrowFromModel(typeof(ServerModel));
+		}
 
         dbContext.Servers.Remove(entity);
         await dbContext.SaveChangesAsync();
@@ -86,26 +129,26 @@ internal sealed class ServersService(
     private async Task<ServerDataResponse> GetServerDataAsync(string inviteLink)
     {
         var code = inviteLink.Split('/')[^1];
-        var link = $"https://discordapp.com/api/v9/invites/{code}";
+        var link = $"https://discord.com/api/v10/invites/{code}?with_counts=true";
 
         var response = await client.GetAsync(link);
 
         if (!response.IsSuccessStatusCode)
         {
-            throw new Exception(); // TODO: Create custom exception
+            IncorrectResponseException.Throw();
         }
 
         var content = await response.Content.ReadFromJsonAsync<ServerDataResponse>();
 
         if (!ServerDataResponse.IsValid(content))
         {
-            throw new Exception();
+            ValidationException.Throw();
         }
 
         return content!;
     }
 
-    private string GetIconUrl(
+    private static string GetPhotoUri(
         string serverId,
         string iconHash) => $"https://cdn.discordapp.com/icons/{serverId}/{iconHash}.png";
 }

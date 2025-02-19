@@ -2,11 +2,14 @@
 
 namespace SharingPlatform.WebApi.Core.Servers.Responses;
 
-public sealed record ServerPreviewResponse(
-    string Id,
+public record ServerPreviewResponse(
+    Guid Id,
     string Name, 
-    string? Description, 
-    string? PhotoUri, 
+    string? Description,
+    string? PhotoUri,
+    int MembersTotal,
+    int MembersOnline,
+	bool Visible,
     IEnumerable<string> Tags)
 {
     public static ServerPreviewResponse FromModel(ServerModel server)
@@ -16,6 +19,9 @@ public sealed record ServerPreviewResponse(
             server.Name,
             server.Description,
             server.PhotoUri,
+            server.MembersInfo.Total,
+			server.MembersInfo.Online,
+			server.Visible,
             server.Tags.Select(tag => tag.Name));
     }
 }

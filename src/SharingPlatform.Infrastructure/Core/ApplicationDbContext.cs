@@ -8,4 +8,5 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
 {
     public DbSet<ServerModel> Servers { get; set; }
     public DbSet<TagModel> Tags { get; set; }
+    public DbSet<FavouriteModel> Favourites { get; set; }
 }

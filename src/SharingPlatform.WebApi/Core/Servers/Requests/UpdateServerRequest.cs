@@ -2,7 +2,7 @@
 
 namespace SharingPlatform.WebApi.Core.Servers.Requests;
 
-public sealed record UpdateServerRequest(string Id, string? Description, bool Visible, Guid[] TagsId)
+public sealed record UpdateServerRequest(Guid Id, string? Description, bool Visible, Guid[] TagsId)
 {
     public ServerModel ToModel(string userId)
     {
@@ -12,6 +12,8 @@ public sealed record UpdateServerRequest(string Id, string? Description, bool Vi
             Description,
             string.Empty,
             userId,
+            string.Empty,
+            null!,
             TagsId.Select(id => TagModel.Create(id, string.Empty)),
             visible: Visible);
     }
