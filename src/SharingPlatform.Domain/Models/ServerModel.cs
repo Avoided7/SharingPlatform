@@ -8,26 +8,33 @@ public sealed class ServerModel
         Name = string.Empty,
         UserId = Guid.Empty.ToString(),
         CreatedAt = DateTime.MinValue,
-        ServerId = Guid.Empty.ToString()
+        GuildId = Guid.Empty.ToString()
     };
 
     public Guid Id { get; set; } 
     public string Name { get; set; } = default!;
     public string? Description { get; set; }
     public string? PhotoUri { get; set; }
+    public string InviteUri { get; set; } = default!;
     public DateTime CreatedAt { get; set; }
     public bool Visible { get; set; }
     public string UserId { get; set; } = default!;
-    public string ServerId { get; set; } = default!;
+    public string GuildId { get; set; } = default!;
     public List<TagModel> Tags { get; set; } = default!;
-    public MembersInfoModel MembersInfo { get; set; } = default!;
+    public List<RatingModel> Ratings { get; set; } = default!;
+	public MembersInfoModel MembersInfo { get; set; } = default!;
 
-    public static ServerModel Create(
+    public double Rating => Ratings.Count == 0
+		? 0
+		: Ratings.Average(rating => rating.Value);
+
+	public static ServerModel Create(
         string name,
         string? description,
         string? photoUri,
+        string inviteUri,
         string userId,
-        string serverId,
+        string guildId,
         MembersInfoModel membersInfo,
         IEnumerable<TagModel>? tags = null,
         bool visible = false)
@@ -40,7 +47,8 @@ public sealed class ServerModel
             PhotoUri = photoUri,
             Visible = visible,
             UserId = userId,
-            ServerId = serverId,
+            InviteUri = inviteUri,
+			GuildId = guildId,
             MembersInfo = membersInfo,
             Tags = tags?.ToList() ?? [],
             CreatedAt = DateTime.UtcNow
@@ -52,8 +60,9 @@ public sealed class ServerModel
         string name,
         string? description,
         string? photoUri,
-        string userId,
-        string serverId,
+        string inviteUri,
+		string userId,
+        string guildId,
         MembersInfoModel membersInfo,
         IEnumerable<TagModel>? tags = null,
         bool visible = false)
@@ -64,9 +73,10 @@ public sealed class ServerModel
             Name = name,
             Description = description,
             PhotoUri = photoUri,
-            Visible = visible,
+			InviteUri = inviteUri,
+			Visible = visible,
             UserId = userId,
-            ServerId = serverId,
+            GuildId = guildId,
             MembersInfo = membersInfo,
             Tags = tags?.ToList() ?? [],
             CreatedAt = DateTime.UtcNow
@@ -96,6 +106,7 @@ public sealed class MembersInfoModel
     {
         return new MembersInfoModel
         {
+            Id = Guid.NewGuid(),
             Online = online,
             Total = total
         };

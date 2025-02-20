@@ -15,9 +15,7 @@ internal sealed class ServersService(
 {
     public PaginatedList<ServerModel> Get(int page, int pageSize)
     {
-        var servers = dbContext.Servers
-	        .Include(server => server.Tags)
-	        .Include(server => server.MembersInfo);
+	    var servers = dbContext.Servers;
 
         var result = PaginatedList.From(servers, page, pageSize);
 
@@ -26,10 +24,7 @@ internal sealed class ServersService(
 
     public PaginatedList<ServerModel> GetOnlyVisible(int page, int pageSize)
     {
-        var servers = dbContext.Servers
-            .Include(server => server.Tags)
-			.Include(server => server.MembersInfo)
-			.Where(server => server.Visible);
+        var servers = dbContext.Servers.Where(server => server.Visible);
 
         var result = PaginatedList.From(servers, page, pageSize);
         
@@ -39,9 +34,7 @@ internal sealed class ServersService(
     public PaginatedList<ServerModel> GetUserOwned(string userId, int page, int pageSize)
     {
 	    var servers = dbContext.Servers
-		    .Where(server => server.UserId == userId)
-		    .Include(server => server.Tags)
-		    .Include(server => server.MembersInfo);
+		    .Where(server => server.UserId == userId);
 
 	    var result = PaginatedList.From(servers, page, pageSize);
 
@@ -51,8 +44,6 @@ internal sealed class ServersService(
     public PaginatedList<ServerModel> GetUserFavourites(string userId, int page, int pageSize)
     {
 	    var servers = dbContext.Favourites
-		    .Include(favourite => favourite.Server.Tags)
-		    .Include(favourite => favourite.Server.MembersInfo)
 		    .Select(favourite => favourite.Server);
 
 		var result = PaginatedList.From(servers, page, pageSize);
@@ -60,21 +51,40 @@ internal sealed class ServersService(
 		return result;
 	}
 
+    public async Task<ServerModel> GetByIdAsync(Guid serverId)
+	{
+		var server = await dbContext.Servers.FindAsync(serverId);
+
+		if(server is null)
+		{
+			NotFoundException.ThrowFromModel(typeof(ServerModel));
+		}
+
+		return server;
+	}
+
 	public async Task<ServerModel> AddFromInviteLinkAsync(string inviteLink, string userId)
     {
         var data = await GetServerDataAsync(inviteLink);
         var details = data.Details!;
-        
-        var photoUri = GetPhotoUri(details.Id, details.IconHash);
 
+        var existedEntity = await dbContext.Servers.AnyAsync(server => server.GuildId == details.GuildId);
+
+        if (existedEntity)
+        {
+            AlreadyExistException.ThrowFromModel(nameof(ServerModel));
+		}
+
+        var photoUri = GetPhotoUri(details.GuildId, details.IconHash);
         var membersInfo = MembersInfoModel.Create(data.MembersOnline, data.MembersTotal);
 
         var model = ServerModel.Create(
             details.Name, 
             details.Description, 
             photoUri,
-            userId,
-            details.Id,
+			inviteLink,
+			userId,
+            details.GuildId,
             membersInfo);
         
         await dbContext.Servers.AddAsync(model);
@@ -86,12 +96,16 @@ internal sealed class ServersService(
     public async Task UpdateAsync(ServerModel server)
     {
         var entity = await dbContext.Servers
-            .Include(entity => entity.Tags)
             .FirstOrDefaultAsync(entity => entity.Id == server.Id);
 
-        if (entity is null || entity.UserId != server.UserId)
+        if (entity is null)
         {
             NotFoundException.ThrowFromModel(typeof(ServerModel));
+        }
+
+        if (entity.UserId != server.UserId)
+        {
+            ValidationException.Throw();
         }
         
         var tags = new List<TagModel>();
@@ -113,14 +127,19 @@ internal sealed class ServersService(
         await dbContext.SaveChangesAsync();
     }
 
-    public async Task DeleteAsync(Guid serverId, string userId)
+    public async Task DeleteAsync(ServerModel server)
     {
-        var entity = await dbContext.Servers.FindAsync(serverId);
+        var entity = await dbContext.Servers.FindAsync(server.Id);
 
-        if (entity is null || entity.UserId != userId)
+        if (entity is null)
         {
 			NotFoundException.ThrowFromModel(typeof(ServerModel));
 		}
+
+        if (entity.UserId != server.UserId)
+        {
+            ValidationException.Throw();
+        }
 
         dbContext.Servers.Remove(entity);
         await dbContext.SaveChangesAsync();

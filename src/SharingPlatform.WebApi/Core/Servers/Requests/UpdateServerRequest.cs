@@ -11,6 +11,7 @@ public sealed record UpdateServerRequest(Guid Id, string? Description, bool Visi
             string.Empty,
             Description,
             string.Empty,
+            string.Empty,
             userId,
             string.Empty,
             null!,

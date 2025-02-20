@@ -19,7 +19,7 @@ internal sealed class FavouritesService(ApplicationDbContext dbContext) : IFavou
 		var userExist = await dbContext.Users.AnyAsync(user => user.Id == favourite.UserId);
 		if (!userExist)
 		{
-			NotFoundException.Throw("User");
+			NotFoundException.ThrowFromModel(typeof(UserModel));
 		}
 
 		await dbContext.Favourites.AddAsync(favourite);

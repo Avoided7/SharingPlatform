@@ -9,7 +9,8 @@ public interface IServersService
     PaginatedList<ServerModel> GetOnlyVisible(int page, int pageSize);
     PaginatedList<ServerModel> GetUserOwned(string userId, int page, int pageSize);
     PaginatedList<ServerModel> GetUserFavourites(string userId, int page, int pageSize);
-    Task<ServerModel> AddFromInviteLinkAsync(string inviteLink, string userId);
+    Task<ServerModel> GetByIdAsync(Guid serverId);
+	Task<ServerModel> AddFromInviteLinkAsync(string inviteLink, string userId);
     Task UpdateAsync(ServerModel server);
-    Task DeleteAsync(Guid serverId, string userId);
+    Task DeleteAsync(ServerModel server);
 }

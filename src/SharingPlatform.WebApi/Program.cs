@@ -13,7 +13,7 @@ builder.Services.AddHttpClient();
 builder.Services.AddSingleton<ExceptionHandlerMiddleware>();
 
 builder.Services.AddApplicationServices();
-builder.Services.AddDbContextInMemory();
+builder.Services.AddDbContextSqlite();
 
 builder.Services.AddApplicationIdentity();
 builder.Services.AddJwtAuthentication(builder.Configuration);

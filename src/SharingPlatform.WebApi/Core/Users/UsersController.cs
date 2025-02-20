@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using SharingPlatform.Application.Abstractions;
+using SharingPlatform.WebApi.Core.Users.Requests;
 using SharingPlatform.WebApi.Core.Users.Responses;
 
 namespace SharingPlatform.WebApi.Core.Users;
@@ -15,7 +16,7 @@ public sealed class UsersController(
     public async Task<IActionResult> SignIn(
         [FromBody] SignInRequest request)
     {
-        var user = await userManager.FindByEmailAsync(request.Email);
+        var user = await userManager.FindByNameAsync(request.Username);
 
         if (user is null)
         {
@@ -41,8 +42,8 @@ public sealed class UsersController(
     {
         var user = new IdentityUser
         {
-            UserName = request.Email,
-            Email = request.Email,
+            UserName = request.Username,
+            Email = request.Email
         };
         
         var result = await userManager.CreateAsync(user, request.Password);

@@ -22,6 +22,16 @@ public sealed class ServersController(IServersService serversService) : Controll
         return Ok(response);
     }
 
+    [HttpGet("details")]
+    public async Task<IActionResult> GetDetails(
+	    [FromQuery] GetDetailsRequest request)
+    {
+        var server = await serversService.GetByIdAsync(request.ServerId);
+        var response = ServerDetailsResponse.FromModel(server);
+
+        return Ok(response);
+    }
+
     [Authorize, HttpGet("all")] // TODO: With admin rights.
     public async Task<IActionResult> GetAll(
 		[FromQuery] PaginatedRequest request)
@@ -81,8 +91,9 @@ public sealed class ServersController(IServersService serversService) : Controll
         [FromBody] DeleteServerRequest request)
     {
         var userId = HttpContext.GetUserId();
+        var server = request.ToModel(userId);
 
-        await serversService.DeleteAsync(request.ServerId, userId);
+        await serversService.DeleteAsync(server);
         
         return NoContent();
     }

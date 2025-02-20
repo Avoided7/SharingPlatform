@@ -1,3 +1,3 @@
-﻿namespace SharingPlatform.WebApi.Core.Users;
+﻿namespace SharingPlatform.WebApi.Core.Users.Requests;
 
-public sealed record SignUpRequest(string Email, string Password);
+public sealed record SignUpRequest(string Username, string Email, string Password);

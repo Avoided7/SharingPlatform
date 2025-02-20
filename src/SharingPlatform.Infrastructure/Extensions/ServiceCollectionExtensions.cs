@@ -11,4 +11,10 @@ public static class ServiceCollectionExtensions
         return services.AddDbContext<ApplicationDbContext>(
             options => options.UseInMemoryDatabase("InMemory"));
     }
+
+    public static IServiceCollection AddDbContextSqlite(this IServiceCollection services)
+    {
+	    return services.AddDbContext<ApplicationDbContext>(
+		    options => options.UseSqlite("Data Source=D:\\Projects\\sql\\SharingPlatform\\Database.db;"));
+    }
 }

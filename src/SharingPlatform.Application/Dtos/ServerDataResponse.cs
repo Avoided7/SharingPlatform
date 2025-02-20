@@ -18,7 +18,7 @@ internal sealed class ServerDataResponse
 
 internal sealed record ServerDetails
 {
-    [JsonPropertyName("id")] public string Id { get; set; } = default!;
+    [JsonPropertyName("id")] public string GuildId { get; set; } = default!;
     [JsonPropertyName("name")] public string Name { get; set; } = default!;
     [JsonPropertyName("description")] public string Description { get; set; } = default!;
     [JsonPropertyName("icon")] public string IconHash { get; set; } = default!;
