@@ -1,0 +1,32 @@
+name: Publish 🚀
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ master ]
+
+env:
+  AZURE_WEBAPP_NAME: sharing-platform
+  AZURE_WEBAPP_PACKAGE_PATH: './publish'
+  DOTNET_VERSION: '9.0.x' # The .NET SDK version to use
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Restore
+      run: dotnet restore ./SharingPlatform.sln
+      
+    - name: Build
+      run: dotnet build ./SharingPlatform.sln --configuration Release --no-restore
+
+    - name: Publish
+      run: dotnet publish ./SharingPlatform.sln -c Release -o ${{ env.AZURE_WEBAPP_PACKAGE_PATH }} --no-build
