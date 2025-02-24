@@ -2,7 +2,7 @@
 
 namespace SharingPlatform.WebApi.Core.Servers.Requests;
 
-public sealed record UpdateServerRequest(Guid Id, string? Description, bool Visible, Guid[] TagsId)
+public sealed record UpdateServerRequest(Guid Id, string? Description, string? About, bool Visible, Guid[] TagsId)
 {
     public ServerModel ToModel(string userId)
     {
@@ -10,6 +10,7 @@ public sealed record UpdateServerRequest(Guid Id, string? Description, bool Visi
             Id,
             string.Empty,
             Description,
+            About,
             string.Empty,
             string.Empty,
             userId,

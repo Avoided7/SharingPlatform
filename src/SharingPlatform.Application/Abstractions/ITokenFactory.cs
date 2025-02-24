@@ -2,5 +2,5 @@
 
 public interface ITokenFactory
 {
-    string GenerateToken(string userId);
+    string GenerateToken(string userId, string roleName);
 }

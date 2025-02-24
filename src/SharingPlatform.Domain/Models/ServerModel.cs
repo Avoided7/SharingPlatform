@@ -1,4 +1,7 @@
-﻿namespace SharingPlatform.Domain.Models;
+﻿using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.AspNetCore.Identity;
+
+namespace SharingPlatform.Domain.Models;
 
 public sealed class ServerModel
 {
@@ -14,6 +17,8 @@ public sealed class ServerModel
     public Guid Id { get; set; } 
     public string Name { get; set; } = default!;
     public string? Description { get; set; }
+
+    public string? About { get; set; }
     public string? PhotoUri { get; set; }
     public string InviteUri { get; set; } = default!;
     public DateTime CreatedAt { get; set; }
@@ -24,6 +29,9 @@ public sealed class ServerModel
     public List<RatingModel> Ratings { get; set; } = default!;
 	public MembersInfoModel MembersInfo { get; set; } = default!;
 
+	[ForeignKey(nameof(UserId))] 
+	public IdentityUser User { get; set; } = default!;
+
     public double Rating => Ratings.Count == 0
 		? 0
 		: Ratings.Average(rating => rating.Value);
@@ -31,6 +39,7 @@ public sealed class ServerModel
 	public static ServerModel Create(
         string name,
         string? description,
+        string? about,
         string? photoUri,
         string inviteUri,
         string userId,
@@ -44,7 +53,8 @@ public sealed class ServerModel
             Id = Guid.NewGuid(),
             Name = name,
             Description = description,
-            PhotoUri = photoUri,
+			About = about,
+			PhotoUri = photoUri,
             Visible = visible,
             UserId = userId,
             InviteUri = inviteUri,
@@ -59,6 +69,7 @@ public sealed class ServerModel
         Guid id,
         string name,
         string? description,
+        string? about,
         string? photoUri,
         string inviteUri,
 		string userId,
@@ -72,7 +83,8 @@ public sealed class ServerModel
             Id = id,
             Name = name,
             Description = description,
-            PhotoUri = photoUri,
+			About = about,
+			PhotoUri = photoUri,
 			InviteUri = inviteUri,
 			Visible = visible,
             UserId = userId,
@@ -85,7 +97,8 @@ public sealed class ServerModel
 
     public void Update(ServerModel model)
     {
-        Description = model.Description;
+        About = model.About;
+		Description = model.Description;
         Visible = model.Visible;
     }
 

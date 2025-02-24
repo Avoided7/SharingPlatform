@@ -21,4 +21,8 @@
       <ProjectReference Include="..\SharingPlatform.Infrastructure\SharingPlatform.Infrastructure.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Constants\" />
+    </ItemGroup>
+
 </Project>

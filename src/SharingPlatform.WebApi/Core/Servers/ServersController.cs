@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SharingPlatform.Application.Abstractions;
+using SharingPlatform.Domain.Constants;
 using SharingPlatform.WebApi.Core.Servers.Requests;
 using SharingPlatform.WebApi.Core.Servers.Responses;
 using SharingPlatform.WebApi.Extensions;
@@ -10,13 +11,13 @@ namespace SharingPlatform.WebApi.Core.Servers;
 
 [ApiController]
 [Route("api/servers")]
-public sealed class ServersController(IServersService serversService) : ControllerBase
+public sealed class ServersController(IServersService serversService, ILogger<ServersController> logger) : ControllerBase
 {
     [HttpGet]
     public async Task<IActionResult> Get(
-        [FromQuery] PaginatedRequest request)
+        [FromQuery] GetServersRequest request)
     {
-        var paginatedServers = serversService.GetOnlyVisible(request.Page, request.PageSize);
+        var paginatedServers = serversService.GetOnlyVisible(request.Page, request.PageSize, request.TagsIds);
         var response = paginatedServers.ChangeType(ServerPreviewResponse.FromModel);
         
         return Ok(response);
@@ -24,7 +25,7 @@ public sealed class ServersController(IServersService serversService) : Controll
 
     [HttpGet("details")]
     public async Task<IActionResult> GetDetails(
-	    [FromQuery] GetDetailsRequest request)
+	    [FromQuery] GetServerDetailsRequest request)
     {
         var server = await serversService.GetByIdAsync(request.ServerId);
         var response = ServerDetailsResponse.FromModel(server);
@@ -32,9 +33,9 @@ public sealed class ServersController(IServersService serversService) : Controll
         return Ok(response);
     }
 
-    [Authorize, HttpGet("all")] // TODO: With admin rights.
+    [Authorize(Roles = Roles.Admin), HttpGet("all")]
     public async Task<IActionResult> GetAll(
-		[FromQuery] PaginatedRequest request)
+		[FromQuery] GetServersRequest request)
 	{
 		var paginatedServers = serversService.Get(request.Page, request.PageSize);
 		var response = paginatedServers.ChangeType(ServerPreviewResponse.FromModel);

@@ -33,6 +33,9 @@ if (app.Environment.IsDevelopment())
             .AllowAnyOrigin());
 }
 
+await app.ApplyMigrationsAsync();
+await app.SeedDatabaseAsync();
+
 app.UseMiddleware<ExceptionHandlerMiddleware>();
 
 app.UseAuthentication();

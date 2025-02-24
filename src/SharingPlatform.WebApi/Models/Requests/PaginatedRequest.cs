@@ -2,11 +2,15 @@
 
 namespace SharingPlatform.WebApi.Models.Requests;
 
-public sealed record PaginatedRequest(
-	[FromQuery] int Page = 1,
-	[FromQuery] int PageSize = 10)
+public class PaginatedRequest
 {
-	public bool IsValid()
+	[FromQuery] 
+	public int Page { get; set; } = 1;
+
+	[FromQuery] 
+	public int PageSize { get; set; } = 10;
+
+	public virtual bool IsValid()
 	{
 		return Page >= 1 && PageSize > 0;
 	}

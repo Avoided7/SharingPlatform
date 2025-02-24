@@ -2,35 +2,66 @@
 
 namespace SharingPlatform.WebApi.Core.Servers.Responses;
 
-public sealed record ServerDetailsResponse(
-	Guid Id, 
-	string Name, 
-	string? Description, 
-	string? PhotoUri, 
-	string InviteUri,
-    int MembersTotal,
-    int MembersOnline,
-	double Rating,
-	bool Visible,
-	IEnumerable<string> Tags,
-	DateTime CreatedAt)
+public sealed class ServerDetailsResponse : ServerPreviewResponse
 {
-    public static ServerDetailsResponse FromModel(ServerModel server)
-    {
-		var rating = double.Round(server.Rating,
-			1);
+	private ServerDetailsResponse(
+		Guid id,
+		string name,
+		string? photoUri,
+		string inviteUri,
+		int membersTotal,
+		int membersOnline,
+		double rating,
+		int votersCount,
+		bool visible,
+		bool isFavourite,
+		string? description,
+		string? about,
+		string ownerUsername,
+		List<Voter> voters,
+		IEnumerable<string> tags,
+		DateTime createdAt)
+		: base(id, name, photoUri, inviteUri, tags, membersTotal, membersOnline, rating, votersCount, visible, isFavourite)
+	{
+		Description = description;
+		About = about;
+		OwnerUsername = ownerUsername;
+		Voters = voters;
+		CreatedAt = createdAt;
+	}
+	
+	public string? Description { get; }
+	public string? About { get; }
+	public string OwnerUsername { get; }
+	public DateTime CreatedAt { get; }
+	public List<Voter> Voters { get; }
+
+	public new static ServerDetailsResponse FromModel(ServerModel server)
+	{
+		var rating = Math.Round(server.Rating, 1);
+		var voters = server.Ratings
+			.Select(rating => new Voter(rating.Value, rating.Comment, rating.User.UserName!))
+			.ToList();
+		var tags = server.Tags.Select(tag => tag.Name);
 
 		return new ServerDetailsResponse(
-            server.Id, 
-            server.Name, 
-            server.Description,
-            server.PhotoUri,
+			server.Id,
+			server.Name,
+			server.PhotoUri,
 			server.InviteUri,
 			server.MembersInfo.Total,
 			server.MembersInfo.Online,
 			rating,
+			server.Ratings.Count,
 			server.Visible,
-			server.Tags.Select(tag => tag.Name),
+			false,
+			server.Description,
+			server.About,
+			server.User.UserName!,
+			voters,
+			tags,
 			server.CreatedAt);
-    }
-};
+	}
+}
+
+public sealed record Voter(double Value, string? Comment, string Username);

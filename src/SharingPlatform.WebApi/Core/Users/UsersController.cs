@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using SharingPlatform.Application.Abstractions;
+using SharingPlatform.Domain.Constants;
 using SharingPlatform.WebApi.Core.Users.Requests;
 using SharingPlatform.WebApi.Core.Users.Responses;
 
@@ -30,7 +31,9 @@ public sealed class UsersController(
             return Unauthorized();
         }
 
-        var token = tokenFactory.GenerateToken(user.Id);
+        var roles = await userManager.GetRolesAsync(user);
+
+        var token = tokenFactory.GenerateToken(user.Id, roles[0]);
         var response = new TokenResponse(token);
         
         return Ok(response);
@@ -53,7 +56,9 @@ public sealed class UsersController(
             return BadRequest(result.Errors);
         }
 
-        var token = tokenFactory.GenerateToken(user.Id);
+        await userManager.AddToRoleAsync(user, Roles.Default);
+
+        var token = tokenFactory.GenerateToken(user.Id, Roles.Default);
         var response = new TokenResponse(token);
         
         return Ok(response);

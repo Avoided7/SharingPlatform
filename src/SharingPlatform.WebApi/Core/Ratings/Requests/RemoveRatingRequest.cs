@@ -6,6 +6,6 @@ public sealed record RemoveRatingRequest(Guid ServerId)
 {
 	public RatingModel ToModel(string userId)
 	{
-		return RatingModel.Create(0, userId, ServerId);
+		return RatingModel.Create(0, null, userId, ServerId);
 	}
 }

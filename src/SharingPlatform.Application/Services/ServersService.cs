@@ -13,18 +13,28 @@ internal sealed class ServersService(
     ApplicationDbContext dbContext,
     HttpClient client) : IServersService
 {
-    public PaginatedList<ServerModel> Get(int page, int pageSize)
+    public PaginatedList<ServerModel> Get(int page, int pageSize, IEnumerable<Guid>? tagsIds = null)
     {
-	    var servers = dbContext.Servers;
+	    var servers = GetOrderedServers(dbContext.Servers);
+
+	    if (tagsIds is not null)
+	    {
+		    servers = GetServersWithTags(servers, tagsIds);
+	    }
 
         var result = PaginatedList.From(servers, page, pageSize);
 
 		return result;
     }
 
-    public PaginatedList<ServerModel> GetOnlyVisible(int page, int pageSize)
+    public PaginatedList<ServerModel> GetOnlyVisible(int page, int pageSize, IEnumerable<Guid>? tagsIds = null)
     {
-        var servers = dbContext.Servers.Where(server => server.Visible);
+        var servers = GetOrderedServers(dbContext.Servers).Where(server => server.Visible);
+
+        if (tagsIds is not null)
+        {
+	        servers = GetServersWithTags(servers, tagsIds);
+        }
 
         var result = PaginatedList.From(servers, page, pageSize);
         
@@ -33,8 +43,7 @@ internal sealed class ServersService(
 
     public PaginatedList<ServerModel> GetUserOwned(string userId, int page, int pageSize)
     {
-	    var servers = dbContext.Servers
-		    .Where(server => server.UserId == userId);
+	    var servers = GetOrderedServers(dbContext.Servers.Where(server => server.UserId == userId));
 
 	    var result = PaginatedList.From(servers, page, pageSize);
 
@@ -43,8 +52,7 @@ internal sealed class ServersService(
 
     public PaginatedList<ServerModel> GetUserFavourites(string userId, int page, int pageSize)
     {
-	    var servers = dbContext.Favourites
-		    .Select(favourite => favourite.Server);
+	    var servers = GetOrderedServers(dbContext.Favourites.Select(favourite => favourite.Server));
 
 		var result = PaginatedList.From(servers, page, pageSize);
 
@@ -53,7 +61,11 @@ internal sealed class ServersService(
 
     public async Task<ServerModel> GetByIdAsync(Guid serverId)
 	{
-		var server = await dbContext.Servers.FindAsync(serverId);
+		var server = await dbContext.Servers
+			.Include(server => server.User)
+			.Include(server => server.Ratings)
+				.ThenInclude(rating => rating.User)
+			.FirstOrDefaultAsync(server => server.Id == serverId);
 
 		if(server is null)
 		{
@@ -81,6 +93,7 @@ internal sealed class ServersService(
         var model = ServerModel.Create(
             details.Name, 
             details.Description, 
+            null,
             photoUri,
 			inviteLink,
 			userId,
@@ -144,28 +157,41 @@ internal sealed class ServersService(
         dbContext.Servers.Remove(entity);
         await dbContext.SaveChangesAsync();
     }
+
+	private async Task<ServerDataResponse> GetServerDataAsync(string inviteLink)
+	{
+		var code = inviteLink.Split('/')[^1];
+		var link = $"https://discord.com/api/v10/invites/{code}?with_counts=true";
+
+		var response = await client.GetAsync(link);
+
+		if(!response.IsSuccessStatusCode)
+		{
+			IncorrectResponseException.Throw();
+		}
+
+		var content = await response.Content.ReadFromJsonAsync<ServerDataResponse>();
+
+		if(!ServerDataResponse.IsValid(content))
+		{
+			ValidationException.Throw();
+		}
+
+		return content!;
+	}
+
+	private static IQueryable<ServerModel> GetOrderedServers(IQueryable<ServerModel> servers) =>
+        servers.OrderByDescending(server => server.CreatedAt);
     
-    private async Task<ServerDataResponse> GetServerDataAsync(string inviteLink)
-    {
-        var code = inviteLink.Split('/')[^1];
-        var link = $"https://discord.com/api/v10/invites/{code}?with_counts=true";
+    private static IQueryable<ServerModel> GetServersWithTags(IQueryable<ServerModel> servers, IEnumerable<Guid> tagsIds)
+	{
+		foreach(var tagId in tagsIds)
+		{
+			servers = servers.Where(server => server.Tags.Any(tag => tag.Id == tagId));
+		}
 
-        var response = await client.GetAsync(link);
-
-        if (!response.IsSuccessStatusCode)
-        {
-            IncorrectResponseException.Throw();
-        }
-
-        var content = await response.Content.ReadFromJsonAsync<ServerDataResponse>();
-
-        if (!ServerDataResponse.IsValid(content))
-        {
-            ValidationException.Throw();
-        }
-
-        return content!;
-    }
+		return servers;
+	}
 
     private static string GetPhotoUri(
         string serverId,

@@ -10,12 +10,14 @@ namespace SharingPlatform.Application.Factories;
 public sealed class TokenFactory(JwtSettings settings) : ITokenFactory
 {
     public string GenerateToken(
-        string userId)
+        string userId,
+        string roleName)
     {
         var claims = new[]
         {
             new Claim(JwtRegisteredClaimNames.Sub, userId),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new Claim(ClaimTypes.Role, roleName)
         };
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(settings.SecretKey));

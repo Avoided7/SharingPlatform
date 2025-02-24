@@ -5,8 +5,8 @@ namespace SharingPlatform.Application.Abstractions;
 
 public interface IServersService
 {
-    PaginatedList<ServerModel> Get(int page, int pageSize);
-    PaginatedList<ServerModel> GetOnlyVisible(int page, int pageSize);
+    PaginatedList<ServerModel> Get(int page, int pageSize, IEnumerable<Guid>? tagsIds = null);
+    PaginatedList<ServerModel> GetOnlyVisible(int page, int pageSize, IEnumerable<Guid>? tagsIds = null);
     PaginatedList<ServerModel> GetUserOwned(string userId, int page, int pageSize);
     PaginatedList<ServerModel> GetUserFavourites(string userId, int page, int pageSize);
     Task<ServerModel> GetByIdAsync(Guid serverId);
