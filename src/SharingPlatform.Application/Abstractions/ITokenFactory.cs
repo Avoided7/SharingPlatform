@@ -2,5 +2,5 @@
 
 public interface ITokenFactory
 {
-    string GenerateToken(string userId, string roleName);
+    string GenerateAccessToken(string userId, string username, string accessToken);
 }

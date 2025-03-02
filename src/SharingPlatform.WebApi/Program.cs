@@ -1,4 +1,4 @@
-using SharingPlatform.Application.Extensions;
+﻿using SharingPlatform.Application.Extensions;
 using SharingPlatform.Infrastructure.Extensions;
 using SharingPlatform.WebApi.Extensions;
 using SharingPlatform.WebApi.Middlewares;
@@ -8,14 +8,13 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 
 builder.Services.AddOpenApi();
-builder.Services.AddHttpClient();
 
 builder.Services.AddSingleton<ExceptionHandlerMiddleware>();
 
 builder.Services.AddApplicationServices();
 builder.Services.AddDbContextSqlite();
 
-builder.Services.AddApplicationIdentity();
+builder.Services.AddDiscordSettings(builder.Configuration);
 builder.Services.AddJwtAuthentication(builder.Configuration);
 
 builder.Services.AddCors();
@@ -33,8 +32,8 @@ if (app.Environment.IsDevelopment())
             .AllowAnyOrigin());
 }
 
+await app.ClearDatabaseAsync();
 await app.ApplyMigrationsAsync();
-await app.SeedDatabaseAsync();
 
 app.UseMiddleware<ExceptionHandlerMiddleware>();
 

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Net;
+﻿using System.Net;
 using System.Text.Json;
 using SharingPlatform.Domain.Exceptions;
 using SharingPlatform.WebApi.Models.Responses;

@@ -9,18 +9,19 @@ namespace SharingPlatform.Application.Factories;
 
 public sealed class TokenFactory(JwtSettings settings) : ITokenFactory
 {
-    public string GenerateToken(
-        string userId,
-        string roleName)
+    public string GenerateAccessToken(
+	    string userId,
+	    string username,
+	    string accessToken)
     {
-        var claims = new[]
-        {
-            new Claim(JwtRegisteredClaimNames.Sub, userId),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-            new Claim(ClaimTypes.Role, roleName)
-        };
+		var claims = new List<Claim>()
+		{
+			new(ClaimTypes.NameIdentifier, userId),
+			new(ClaimTypes.Name, username),
+			new("discord_token", accessToken)
+		};
 
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(settings.SecretKey));
+		var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(settings.SecretKey));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var securityToken = new JwtSecurityToken(

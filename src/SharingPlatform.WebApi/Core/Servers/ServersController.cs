@@ -11,10 +11,10 @@ namespace SharingPlatform.WebApi.Core.Servers;
 
 [ApiController]
 [Route("api/servers")]
-public sealed class ServersController(IServersService serversService, ILogger<ServersController> logger) : ControllerBase
+public sealed class ServersController(IServersService serversService) : ControllerBase
 {
     [HttpGet]
-    public async Task<IActionResult> Get(
+    public IActionResult Get(
         [FromQuery] GetServersRequest request)
     {
         var paginatedServers = serversService.GetOnlyVisible(request.Page, request.PageSize, request.TagsIds);
@@ -34,7 +34,7 @@ public sealed class ServersController(IServersService serversService, ILogger<Se
     }
 
     [Authorize(Roles = Roles.Admin), HttpGet("all")]
-    public async Task<IActionResult> GetAll(
+    public IActionResult GetAll(
 		[FromQuery] GetServersRequest request)
 	{
 		var paginatedServers = serversService.Get(request.Page, request.PageSize);
@@ -44,7 +44,7 @@ public sealed class ServersController(IServersService serversService, ILogger<Se
 	}
 
 	[Authorize, HttpGet("owned")]
-    public async Task<IActionResult> GetUserOwned(
+    public IActionResult GetUserOwned(
         [FromQuery] PaginatedRequest request)
     {
         var userId = HttpContext.GetUserId();
@@ -55,7 +55,7 @@ public sealed class ServersController(IServersService serversService, ILogger<Se
     }
 
     [Authorize, HttpGet("favourites")]
-    public async Task<IActionResult> GetUserFavourites(
+    public IActionResult GetUserFavourites(
 		[FromQuery] PaginatedRequest request)
 	{
 		var userId = HttpContext.GetUserId();

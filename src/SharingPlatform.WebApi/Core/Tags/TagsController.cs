@@ -11,7 +11,7 @@ namespace SharingPlatform.WebApi.Core.Tags;
 public sealed class TagsController(ITagsService tagsService) : ControllerBase
 {
     [HttpGet]
-    public async Task<IActionResult> Get(
+    public IActionResult Get(
         [FromQuery] PaginatedRequest request)
     {
         var paginatedTags = tagsService.Get(request.Page, request.PageSize);

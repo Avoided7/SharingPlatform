@@ -13,8 +13,12 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ITagsService, TagsService>();
         services.AddScoped<IFavouritesService, FavouritesService>();
         services.AddScoped<IRatingsService, RatingsService>();
+        services.AddScoped<IDiscordService, DiscordService>();
+
         services.AddScoped<ITokenFactory, TokenFactory>();
 
-        return services;
+        services.AddHttpClient<IDiscordService, DiscordService>(client => client.BaseAddress = new Uri("https://discord.com/api/"));
+
+		return services;
     }
 }

@@ -1,22 +1,45 @@
 ﻿using System.Text.Json.Serialization;
+using SharingPlatform.Domain.Models;
 
 namespace SharingPlatform.Application.Dtos;
 
-internal sealed class ServerDataResponse
+public sealed class DiscordServerData
 {
     [JsonPropertyName("expires_at")] public DateTime ExpiresAt { get; set; }
-    [JsonPropertyName("guild")] public ServerDetails? Details { get; set; }
+    [JsonPropertyName("guild")] public DiscordServerDetails Details { get; set; } = default!;
     [JsonPropertyName("approximate_member_count")] public int MembersTotal { get; set; }
     [JsonPropertyName("approximate_presence_count")] public int MembersOnline { get; set; }
     [JsonPropertyName("type")] public int InviteType { get; set; }
 
-    public static bool IsValid(ServerDataResponse? response)
+    public string PhotoUri => $"https://cdn.discordapp.com/icons/{Details!.GuildId}/{Details.IconHash}.png";
+
+
+	public ServerModel ToModel(
+	    string inviteLink,
+	    string userId)
+    {
+	    var membersInfo = MembersInfoModel.Create(MembersOnline, MembersTotal);
+
+	    var model = ServerModel.Create(
+		    Details.Name,
+		    Details.Description,
+		    null,
+		    PhotoUri,
+		    inviteLink,
+		    userId,
+		    Details.GuildId,
+		    membersInfo);
+
+	    return model;
+    }
+
+    public static bool IsValid(DiscordServerData? response)
     {
         return response?.Details is not null && InviteTypes.IsGuild(response.InviteType);
     }
 }
 
-internal sealed record ServerDetails
+public sealed record DiscordServerDetails
 {
     [JsonPropertyName("id")] public string GuildId { get; set; } = default!;
     [JsonPropertyName("name")] public string Name { get; set; } = default!;

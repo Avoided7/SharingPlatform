@@ -1,7 +1,5 @@
-﻿using System.Net.Http.Json;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using SharingPlatform.Application.Abstractions;
-using SharingPlatform.Application.Dtos;
 using SharingPlatform.Domain.Exceptions;
 using SharingPlatform.Domain.Helpers;
 using SharingPlatform.Domain.Models;
@@ -11,7 +9,7 @@ namespace SharingPlatform.Application.Services;
 
 internal sealed class ServersService(
     ApplicationDbContext dbContext,
-    HttpClient client) : IServersService
+    IDiscordService discordService) : IServersService
 {
     public PaginatedList<ServerModel> Get(int page, int pageSize, IEnumerable<Guid>? tagsIds = null)
     {
@@ -77,7 +75,7 @@ internal sealed class ServersService(
 
 	public async Task<ServerModel> AddFromInviteLinkAsync(string inviteLink, string userId)
     {
-        var data = await GetServerDataAsync(inviteLink);
+        var data = await discordService.GetServerDataAsync(inviteLink);
         var details = data.Details!;
 
         var existedEntity = await dbContext.Servers.AnyAsync(server => server.GuildId == details.GuildId);
@@ -87,18 +85,7 @@ internal sealed class ServersService(
             AlreadyExistException.ThrowFromModel(nameof(ServerModel));
 		}
 
-        var photoUri = GetPhotoUri(details.GuildId, details.IconHash);
-        var membersInfo = MembersInfoModel.Create(data.MembersOnline, data.MembersTotal);
-
-        var model = ServerModel.Create(
-            details.Name, 
-            details.Description, 
-            null,
-            photoUri,
-			inviteLink,
-			userId,
-            details.GuildId,
-            membersInfo);
+        var model = data.ToModel(inviteLink, userId);
         
         await dbContext.Servers.AddAsync(model);
         await dbContext.SaveChangesAsync();
@@ -157,28 +144,6 @@ internal sealed class ServersService(
         dbContext.Servers.Remove(entity);
         await dbContext.SaveChangesAsync();
     }
-
-	private async Task<ServerDataResponse> GetServerDataAsync(string inviteLink)
-	{
-		var code = inviteLink.Split('/')[^1];
-		var link = $"https://discord.com/api/v10/invites/{code}?with_counts=true";
-
-		var response = await client.GetAsync(link);
-
-		if(!response.IsSuccessStatusCode)
-		{
-			IncorrectResponseException.Throw();
-		}
-
-		var content = await response.Content.ReadFromJsonAsync<ServerDataResponse>();
-
-		if(!ServerDataResponse.IsValid(content))
-		{
-			ValidationException.Throw();
-		}
-
-		return content!;
-	}
 
 	private static IQueryable<ServerModel> GetOrderedServers(IQueryable<ServerModel> servers) =>
         servers.OrderByDescending(server => server.CreatedAt);
