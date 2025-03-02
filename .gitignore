@@ -363,3 +363,4 @@ MigrationBackup/
 FodyWeavers.xsd
 /src/SharingPlatform.Infrastructure/Migrations
 /.idea/.idea.SharingPlatform/.idea
+/src/SharingPlatform.WebApi/appsettings.Development.json
